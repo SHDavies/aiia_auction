@@ -1,48 +1,26 @@
-import type { MetaFunction } from "@remix-run/node";
-
-export const meta: MetaFunction = () => {
-  return [
-    { title: "New Remix App" },
-    { name: "description", content: "Welcome to Remix!" },
-  ];
-};
+import { Button } from "@material-tailwind/react";
+import { Link } from "@remix-run/react";
 
 export default function Index() {
+  const thisYear = new Date().getFullYear();
   return (
-    <div className="font-sans p-4">
-      <h1 className="text-3xl">Welcome to Remix</h1>
-      <ul className="list-disc mt-4 pl-6 space-y-2">
-        <li>
-          <a
-            className="text-blue-700 underline visited:text-purple-900"
-            target="_blank"
-            href="https://remix.run/start/quickstart"
-            rel="noreferrer"
-          >
-            5m Quick Start
-          </a>
-        </li>
-        <li>
-          <a
-            className="text-blue-700 underline visited:text-purple-900"
-            target="_blank"
-            href="https://remix.run/start/tutorial"
-            rel="noreferrer"
-          >
-            30m Tutorial
-          </a>
-        </li>
-        <li>
-          <a
-            className="text-blue-700 underline visited:text-purple-900"
-            target="_blank"
-            href="https://remix.run/docs"
-            rel="noreferrer"
-          >
-            Remix Docs
-          </a>
-        </li>
-      </ul>
+    <div className="lg:h-full">
+      <div
+        id="hero"
+        className="absolute lg:relative top-0 bottom-0 h-full w-screen bg-hero bg-cover lg:bg-contain bg-no-repeat bg-center bg-gray-100 flex flex-col justify-center"
+      >
+        <h1 className="text-xl lg:text-4xl text-white p-8 rounded-sm bg-gray-700 opacity-90 text-center">
+          Welcome to the {thisYear} <br />
+          Addict II Athlete Silent Auction!
+        </h1>
+        <div className="flex mt-4 justify-center">
+          <Link to="/auctions" prefetch="intent">
+            <Button size="lg" className="mt-8 bg-red-600">
+              View Auctions
+            </Button>
+          </Link>
+        </div>
+      </div>
     </div>
   );
 }
