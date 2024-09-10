@@ -21,7 +21,7 @@ import { uploadImage } from "~/utils/cloudinary.server";
 export const loader: LoaderFunction = async ({ request }) => {
   const user = await getUserFromSession(request);
   if (!user || !user.is_admin) {
-    throw new Response(null, { status: 404 });
+    return redirect("/auctions");
   }
   return new Response(null, { status: 200 });
 };

@@ -43,9 +43,14 @@ export interface Watches {
   active: Generated<boolean>;
 }
 
+export interface Config {
+  auction_end: Timestamp;
+}
+
 export interface DB {
   auction_items: AuctionItems;
   bids: Bids;
   users: Users;
   watches: Watches;
+  config: Config;
 }

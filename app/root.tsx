@@ -28,6 +28,9 @@ import { CloudinaryContext } from "./contexts/CloudinaryContext";
 import Alerts from "./components/Alerts";
 import Header from "./components/Header";
 import ButtonLink from "./components/ButtonLink";
+import { getAuctionEnd } from "./models/config.server";
+import { AuctionEndContext } from "./contexts/AuctionEndContext";
+import Countdown, { CountdownRenderProps } from "react-countdown";
 
 export const links: LinksFunction = () => [
   { rel: "stylesheet", href: stylesheet },
@@ -46,9 +49,12 @@ export const links: LinksFunction = () => [
 export const meta: MetaFunction = () => [{ title: "AIIA Silent Auction" }];
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
+  const auctionEnd = await getAuctionEnd();
+
   return json({
     user: await getUserFromSession(request),
     cloudName: process.env.CLOUDINARY_CLOUD_NAME,
+    auctionEnd,
   });
 };
 
@@ -61,7 +67,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <Meta />
         <Links />
       </head>
-      <body className="h-full bg-gray-100">
+      <body className="h-[100vh] bg-gray-100">
         {children}
         <ScrollRestoration />
         <Scripts />
@@ -71,7 +77,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
 }
 
 export default function App() {
-  const { user, cloudName } = useLoaderData<typeof loader>();
+  const { user, cloudName, auctionEnd } = useLoaderData<typeof loader>();
 
   const [cloudinary] = useState(
     new Cloudinary({
@@ -98,9 +104,16 @@ export default function App() {
       <AlertContextProvider>
         <SocketProvider socket={socket}>
           <CloudinaryContext.Provider value={cloudinary}>
-            <Alerts />
-            <Header loggedIn={!!user} />
-            <Outlet />
+            <AuctionEndContext.Provider value={new Date(auctionEnd)}>
+              <Alerts />
+              <Header loggedIn={!!user} />
+              <Outlet />
+              <div className="fixed w-full md:w-auto bottom-0 right-0">
+                {!!auctionEnd && (
+                  <Countdown date={auctionEnd} renderer={AuctionEndTimer} />
+                )}
+              </div>
+            </AuctionEndContext.Provider>
           </CloudinaryContext.Provider>
         </SocketProvider>
       </AlertContextProvider>
@@ -152,3 +165,32 @@ export const ErrorBoundary = () => {
     </>
   );
 };
+
+function AuctionEndTimer({
+  days,
+  hours,
+  minutes,
+  seconds,
+  completed,
+}: CountdownRenderProps) {
+  if (completed) {
+    return (
+      <div className="py-2 px-6 md:rounded-tl-xl bg-blue-600 text-lg text-white text-center">
+        Auction has ended
+      </div>
+    );
+  }
+  if (days === 0 && hours === 0 && minutes < 10) {
+    return (
+      <div className="py-2 px-6 md:rounded-tl-xl bg-orange-900 text-lg text-white text-center">
+        Only {minutes} minutes and {seconds} seconds left!
+      </div>
+    );
+  }
+  return (
+    <div className="py-2 px-6 md:rounded-tl-xl bg-blue-600 text-lg text-white text-center">
+      Auction ends in {days} days, {hours} hours, {minutes} minutes, and{" "}
+      {seconds} seconds
+    </div>
+  );
+}

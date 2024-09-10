@@ -1,4 +1,4 @@
-import { Button } from "@material-tailwind/react";
+import tw from "@material-tailwind/react";
 import { Link } from "@remix-run/react";
 import type { ReactNode } from "react";
 import { createContext, useContext, useEffect, useState } from "react";
@@ -75,7 +75,7 @@ export function SocketProvider({ socket, children }: ProviderProps) {
         color: "blue",
         link: !window.location.pathname.includes(auctionItemId) && (
           <Link to={`/auctions/${auctionItemId}`} prefetch="render">
-            <Button variant="outlined">View Item</Button>
+            <tw.Button variant="outlined">View Item</tw.Button>
           </Link>
         ),
       });

@@ -12,6 +12,7 @@ import Input from "./Input";
 
 interface BidModalProps extends DialogProps {
   defaultValue?: number;
+  auctionEnded: boolean;
   fetcher: FetcherWithComponents<{
     success: boolean;
     message: string;
@@ -21,6 +22,7 @@ interface BidModalProps extends DialogProps {
 
 export default function BidModal({
   defaultValue,
+  auctionEnded,
   fetcher,
   handler,
   ref: _,
@@ -50,6 +52,7 @@ export default function BidModal({
               name="amount"
               label="Bid"
               defaultValue={defaultValue}
+              // eslint-disable-next-line jsx-a11y/no-autofocus
               autoFocus
               disabled={fetcher.state === "submitting"}
               type="number"
@@ -60,7 +63,7 @@ export default function BidModal({
               variant="gradient"
               type="submit"
               className="w-full"
-              disabled={fetcher.state === "submitting"}
+              disabled={auctionEnded || fetcher.state === "submitting"}
             >
               Submit
             </Button>

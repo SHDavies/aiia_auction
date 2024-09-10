@@ -18,11 +18,13 @@ import ExpandIcon from "~/components/icons/ExpandIcon";
 import EyeDisabledIcon from "~/components/icons/EyeDisabledIcon";
 import EyeIcon from "~/components/icons/EyeIcon";
 import { AlertContext } from "~/contexts/AlertContext";
+import { AuctionEndContext } from "~/contexts/AuctionEndContext";
 import { CloudinaryContext } from "~/contexts/CloudinaryContext";
 import { LoaderContext } from "~/contexts/LoaderContext";
 import { useSocket } from "~/contexts/SocketContext";
 import { getAuctionItem } from "~/models/auction.server";
 import { createBid } from "~/models/bid.server";
+import { getAuctionEnd } from "~/models/config.server";
 import { checkForUserWatch, setWatch, unwatch } from "~/models/watches.server";
 import { getUserFromSession, requireUser } from "~/session.server";
 import { formatMoney, useOptionalUser } from "~/utils/utils";
@@ -51,8 +53,14 @@ export const action = async ({
 }: LoaderFunctionArgs): Promise<{
   success: boolean;
   message: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   data?: any;
 }> => {
+  const auctionEnds = await getAuctionEnd();
+  if (new Date() >= auctionEnds) {
+    throw new Response("Auction has ended", { status: 400 });
+  }
+
   const user = await requireUser(request);
 
   const auction_item_id = params["auctionId"];
@@ -119,6 +127,7 @@ export default function AuctionPage() {
   const user = useOptionalUser();
   const socket = useSocket();
   const loading = useContext(LoaderContext);
+  const auctionEnds = useContext(AuctionEndContext) || new Date();
 
   const [currentBid, setCurrentBid] = useState(
     Number(auctionItem.max_bid || auctionItem.starting_bid),
@@ -126,6 +135,10 @@ export default function AuctionPage() {
   const [highlight, setHighlight] = useState(false);
   const [copyText, setCopyText] = useState("Copy URL");
   const [photoUrl, setPhotoUrl] = useState<CloudinaryImage | null>(null);
+  const ended = new Date() > new Date(auctionEnds);
+  const [auctionEnded, setAuctionEnded] = useState(ended);
+  const [endTimeout, setEndTimeout] =
+    useState<ReturnType<typeof setInterval>>();
 
   const handleUpdateAmount = (auctionItemId: string, amount: number) => {
     if (auctionItemId === auctionItem.id) {
@@ -136,6 +149,22 @@ export default function AuctionPage() {
       }, 1200);
     }
   };
+
+  useEffect(() => {
+    if (!ended) {
+      setEndTimeout(
+        setInterval(() => {
+          if (new Date() > new Date(auctionEnds)) {
+            setAuctionEnded(true);
+          }
+        }, 500),
+      );
+
+      return () => {
+        clearInterval(endTimeout);
+      };
+    }
+  }, []);
 
   useEffect(() => {
     const url = auctionItem.photo_id
@@ -237,8 +266,9 @@ export default function AuctionPage() {
   };
 
   return (
-    <div className="h-full">
+    <div className="h-full relative">
       <BidModal
+        auctionEnded={auctionEnded}
         fetcher={fetcher}
         open={open}
         defaultValue={defaultVal}
@@ -247,7 +277,7 @@ export default function AuctionPage() {
         {""}
       </BidModal>
       <Link
-        className="absolute top-24 lg:top-32 lg:left-4 text-gray-500 border-gray-500 rounded-[7px] hover:bg-gray-400 hover:text-white py-2 px-4 transition-colors duration-200"
+        className="absolute top-0 lg:left-4 text-gray-500 border-gray-500 rounded-[7px] hover:bg-gray-400 hover:text-white py-2 px-4 transition-colors duration-200"
         to="/auctions"
         prefetch="intent"
       >
@@ -321,17 +351,37 @@ export default function AuctionPage() {
               <h3 className="text-xl text-gray-600 mr-4 my-4">
                 Increase Bid By:
               </h3>
-              <ButtonGroup variant="gradient" color="red">
-                <Button type="button" onClick={toggleModalFunc(1)}>
+              <ButtonGroup
+                variant="gradient"
+                color="red"
+                aria-disabled={auctionEnded}
+              >
+                <Button
+                  type="button"
+                  disabled={auctionEnded}
+                  onClick={toggleModalFunc(1)}
+                >
                   $1
                 </Button>
-                <Button type="button" onClick={toggleModalFunc(5)}>
+                <Button
+                  type="button"
+                  disabled={auctionEnded}
+                  onClick={toggleModalFunc(5)}
+                >
                   $5
                 </Button>
-                <Button type="button" onClick={toggleModalFunc(10)}>
+                <Button
+                  type="button"
+                  disabled={auctionEnded}
+                  onClick={toggleModalFunc(10)}
+                >
                   $10
                 </Button>
-                <Button type="button" onClick={toggleModalFunc()}>
+                <Button
+                  type="button"
+                  disabled={auctionEnded}
+                  onClick={toggleModalFunc()}
+                >
                   Other
                 </Button>
               </ButtonGroup>
